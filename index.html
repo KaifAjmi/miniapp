@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini App Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: Arial; background:#0f172a; color:#fff; margin:0; }
+    .card { background:#111827; margin:12px; padding:16px; border-radius:12px; }
+    button { padding:12px; border-radius:10px; border:0; width:100%; font-size:16px; }
+    .primary { background:#22c55e; color:#000; }
+    .muted { color:#9ca3af; font-size:13px; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>👤 User Dashboard</h2>
+  <p id="user"></p>
+  <p>🪙 Coins: <b id="coins">0</b></p>
+  <p>💰 Wallet: ₹<b id="wallet">0</b></p>
+</div>
+
+<div class="card">
+  <button class="primary" onclick="startLevel1()">▶️ Start Level 1</button>
+</div>
+
+<div class="card">
+  <button id="watchAdBtn" onclick="watchAd()" disabled>📺 Watch Ad to Unlock Game</button>
+  <p class="muted" id="adInfo">Watch ads to unlock more play.</p>
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+
+  const user = tg.initDataUnsafe.user;
+  document.getElementById("user").innerText =
+    `ID: ${user?.id || "-"} | ${user?.first_name || ""}`;
+
+  let coins = 0;
+  let wallet = 0;
+  let adsWatched = 0;
+  let adsRequired = 2; // Level 1 ads required (admin adjustable later)
+
+  function startLevel1(){
+    alert(`Level 1 started! You need to watch ${adsRequired} ads to unlock gameplay.`);
+    document.getElementById("watchAdBtn").disabled = false;
+  }
+
+  function watchAd(){
+    adsWatched++;
+    coins += 1; // 1 coin per ad (adjustable)
+    document.getElementById("coins").innerText = coins;
+
+    if(adsWatched >= adsRequired){
+      document.getElementById("watchAdBtn").disabled = true;
+      alert("🎉 Level 1 unlocked! Now you can play the game.");
+      document.getElementById("adInfo").innerText = "Level 1 unlocked!";
+    } else {
+      document.getElementById("adInfo").innerText = `Ads watched: ${adsWatched}/${adsRequired}`;
+    }
+  }
+</script>
+
+</body>
+</html>
