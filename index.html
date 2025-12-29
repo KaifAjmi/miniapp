@@ -2,89 +2,65 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TurboCoin Racer</title>
+<title>Bubble Coin Shooter</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Telegram SDK -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(180deg,#1e3c72,#2a5298);
+  background: linear-gradient(180deg,#6a11cb,#2575fc);
   color: white;
   text-align: center;
 }
 
 header {
   padding: 10px;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.3);
 }
 
 #wallet {
   display: flex;
   justify-content: space-around;
-  font-size: 16px;
 }
 
 #gameArea {
   width: 100%;
-  height: 60vh;
-  background: #222;
+  height: 65vh;
+  background: #111;
   position: relative;
   overflow: hidden;
   border-radius: 15px;
   margin-top: 10px;
 }
 
-#road {
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    #555 0px,
-    #555 40px,
-    #777 40px,
-    #777 80px
-  );
+.bubble {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  position: absolute;
 }
 
-#car {
-  width: 50px;
-  height: 80px;
-  background: red;
-  border-radius: 10px;
+#shooter {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: yellow;
   position: absolute;
-  bottom: 20px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.controls {
-  margin-top: 10px;
-}
-
 button {
-  padding: 12px 18px;
-  margin: 5px;
+  margin: 10px;
+  padding: 12px 20px;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
-  cursor: pointer;
-}
-
-.sound {
   background: gold;
-}
-
-.play {
-  background: limegreen;
-}
-
-footer {
-  margin-top: 10px;
-  font-size: 12px;
-  opacity: 0.8;
 }
 </style>
 </head>
@@ -92,102 +68,70 @@ footer {
 <body>
 
 <header>
-  <h2>🚗 TurboCoin Racer</h2>
+  <h2>🫧 Bubble Coin Shooter</h2>
   <div id="wallet">
     <div>🪙 Coins: <span id="coins">0</span></div>
-    <div>💰 Balance: ₹<span id="rupees">0</span></div>
+    <div>💰 Balance: ₹<span id="money">0</span></div>
   </div>
 </header>
 
 <div id="gameArea">
-  <div id="road"></div>
-  <div id="car"></div>
+  <div id="shooter"></div>
 </div>
 
-<div class="controls">
-  <button onclick="moveLeft()">⬅️ Left</button>
-  <button onclick="moveRight()">➡️ Right</button>
-</div>
-
-<div class="controls">
-  <button class="play" onclick="startGame()">▶️ Start Game</button>
-  <button class="sound" onclick="toggleSound()">🔊 Sound</button>
-</div>
-
-<footer>
-  Play & Earn Coins • Withdraw after event
-</footer>
-
-<!-- Sounds -->
-<audio id="bgMusic" loop>
-  <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3">
-</audio>
-
-<audio id="coinSound">
-  <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-bonus-alert-767.mp3">
-</audio>
+<button onclick="shootBubble()">🎯 Shoot Bubble</button>
 
 <script>
 Telegram.WebApp.expand();
 
-// ===== ADMIN CONFIG (TU YAHAN CONTROL KAREGA) =====
-let COIN_TO_RUPEE = 0.5;   // 👈 ADMIN change karega (1 coin = ₹0.5)
-let MAX_DAILY_COINS = 1000;
-// ================================================
+// ===== ADMIN CONFIG =====
+let COIN_TO_RUPEE = 0.5;
+let COINS_PER_HIT = 5;
+// ========================
 
 let coins = 0;
-let playing = false;
-let soundOn = true;
-let gameInterval;
-
-const car = document.getElementById("car");
+const gameArea = document.getElementById("gameArea");
 const coinsEl = document.getElementById("coins");
-const rupeesEl = document.getElementById("rupees");
-const bgMusic = document.getElementById("bgMusic");
-const coinSound = document.getElementById("coinSound");
+const moneyEl = document.getElementById("money");
 
-let carPos = 50;
-
-function moveLeft() {
-  if(carPos > 10) carPos -= 10;
-  car.style.left = carPos + "%";
+function randomColor() {
+  const colors = ["red","yellow","lime","cyan","orange","pink"];
+  return colors[Math.floor(Math.random() * colors.length)];
 }
 
-function moveRight() {
-  if(carPos < 90) carPos += 10;
-  car.style.left = carPos + "%";
-}
+function createBubble() {
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.style.background = randomColor();
+  bubble.style.left = Math.random() * 85 + "%";
+  bubble.style.top = "0px";
+  gameArea.appendChild(bubble);
 
-function startGame() {
-  if (playing) return;
-  playing = true;
-
-  if (soundOn) bgMusic.play();
-
-  gameInterval = setInterval(() => {
-    if (coins >= MAX_DAILY_COINS) {
-      stopGame();
-      alert("Daily limit reached!");
-      return;
+  let pos = 0;
+  const fall = setInterval(() => {
+    pos += 2;
+    bubble.style.top = pos + "px";
+    if (pos > gameArea.clientHeight) {
+      clearInterval(fall);
+      bubble.remove();
     }
+  }, 20);
 
-    coins += 5; // earning speed
+  bubble.onclick = () => {
+    coins += COINS_PER_HIT;
     coinsEl.innerText = coins;
-    rupeesEl.innerText = (coins * COIN_TO_RUPEE).toFixed(2);
-
-    if (soundOn) coinSound.play();
-  }, 1000);
+    moneyEl.innerText = (coins * COIN_TO_RUPEE).toFixed(2);
+    bubble.remove();
+  };
 }
 
-function stopGame() {
-  playing = false;
-  clearInterval(gameInterval);
-  bgMusic.pause();
-}
+// Auto bubbles
+setInterval(createBubble, 1500);
 
-function toggleSound() {
-  soundOn = !soundOn;
-  if (!soundOn) bgMusic.pause();
+function shootBubble() {
+  coins += COINS_PER_HIT;
+  coinsEl.innerText = coins;
+  moneyEl.innerText = (coins * COIN_TO_RUPEE).toFixed(2);
 }
 </script>
 
