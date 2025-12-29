@@ -2,136 +2,123 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Bubble Coin Shooter</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+<title>Tic Tac Toe – Level 1</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(180deg,#6a11cb,#2575fc);
-  color: white;
-  text-align: center;
-}
-
-header {
-  padding: 10px;
-  background: rgba(0,0,0,0.3);
-}
-
-#wallet {
-  display: flex;
-  justify-content: space-around;
-}
-
-#gameArea {
-  width: 100%;
-  height: 65vh;
-  background: #111;
-  position: relative;
-  overflow: hidden;
-  border-radius: 15px;
-  margin-top: 10px;
-}
-
-.bubble {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  position: absolute;
-}
-
-#shooter {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: yellow;
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-button {
-  margin: 10px;
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 10px;
-  border: none;
-  background: gold;
-}
+  body { font-family: Arial; background: linear-gradient(#87ceeb,#e0f6ff); text-align:center; margin:0; padding:0;}
+  #dashboard { margin: 10px; }
+  #coins, #level { font-size: 18px; margin:5px;}
+  #leaderboardBtn, #dashboardBtn { padding:5px 10px; margin:5px; cursor:pointer;}
+  #gameBoard { display: grid; grid-template-columns: repeat(3, 100px); grid-gap:5px; margin:20px auto; }
+  .cell { width:100px; height:100px; background:white; display:flex; align-items:center; justify-content:center; font-size:36px; cursor:pointer; border:2px solid #333;}
+  #message { margin-top:10px; font-size:16px;}
 </style>
 </head>
-
 <body>
 
-<header>
-  <h2>🫧 Bubble Coin Shooter</h2>
-  <div id="wallet">
-    <div>🪙 Coins: <span id="coins">0</span></div>
-    <div>💰 Balance: ₹<span id="money">0</span></div>
-  </div>
-</header>
+<h2>Tic Tac Toe – Level 1</h2>
 
-<div id="gameArea">
-  <div id="shooter"></div>
+<div id="dashboard">
+  <div id="coins">Coins: 0</div>
+  <div id="level">Level: 1</div>
+  <button id="leaderboardBtn">Leaderboard</button>
+  <button id="dashboardBtn">Dashboard</button>
 </div>
 
-<button onclick="shootBubble()">🎯 Shoot Bubble</button>
+<div id="gameBoard">
+  <div class="cell" data-index="0"></div>
+  <div class="cell" data-index="1"></div>
+  <div class="cell" data-index="2"></div>
+  <div class="cell" data-index="3"></div>
+  <div class="cell" data-index="4"></div>
+  <div class="cell" data-index="5"></div>
+  <div class="cell" data-index="6"></div>
+  <div class="cell" data-index="7"></div>
+  <div class="cell" data-index="8"></div>
+</div>
+
+<div id="message"></div>
+<button id="freePlayBtn">Free Play (First Time)</button>
+<button id="watchAdBtn" disabled>Watch Ad to Play More</button>
 
 <script>
-Telegram.WebApp.expand();
-
-// ===== ADMIN CONFIG =====
-let COIN_TO_RUPEE = 0.5;
-let COINS_PER_HIT = 5;
-// ========================
-
+// Game & User Logic
+let board = Array(9).fill(null);
+let player = 'X';
+let computer = 'O';
 let coins = 0;
-const gameArea = document.getElementById("gameArea");
-const coinsEl = document.getElementById("coins");
-const moneyEl = document.getElementById("money");
+let adWatched = 0;
+const maxAdsPerUser = 5;
+const safeAdGap = 20 * 60; // 20 minutes in seconds
+let lastAdTime = 0;
 
-function randomColor() {
-  const colors = ["red","yellow","lime","cyan","orange","pink"];
-  return colors[Math.floor(Math.random() * colors.length)];
+// Win combinations
+const wins = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+// Free Play button
+document.getElementById("freePlayBtn").onclick = ()=>{
+  document.getElementById("message").innerText = "Free Play started! Play and earn coins after each win.";
+  document.getElementById("watchAdBtn").disabled = false;
+  document.getElementById("freePlayBtn").disabled = true;
 }
 
-function createBubble() {
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.style.background = randomColor();
-  bubble.style.left = Math.random() * 85 + "%";
-  bubble.style.top = "0px";
-  gameArea.appendChild(bubble);
+// Watch Ad button
+document.getElementById("watchAdBtn").onclick = ()=>{
+  let now = Date.now()/1000;
+  if(adWatched < maxAdsPerUser && now - lastAdTime >= safeAdGap){
+    adWatched++;
+    lastAdTime = now;
+    document.getElementById("message").innerText = `Ad watched ${adWatched}/${maxAdsPerUser}. Play 20 min free now!`;
+  } else {
+    let wait = Math.ceil(safeAdGap - (now - lastAdTime));
+    document.getElementById("message").innerText = `Wait ${wait} seconds before next ad or max ads reached!`;
+  }
+}
 
-  let pos = 0;
-  const fall = setInterval(() => {
-    pos += 2;
-    bubble.style.top = pos + "px";
-    if (pos > gameArea.clientHeight) {
-      clearInterval(fall);
-      bubble.remove();
+// Game Board Click
+const cells = document.querySelectorAll(".cell");
+cells.forEach(cell => {
+  cell.addEventListener("click", ()=> {
+    let idx = cell.dataset.index;
+    if(!board[idx]){
+      board[idx] = player;
+      cell.innerText = player;
+      if(checkWin(player)){
+        coins += 10;
+        document.getElementById("coins").innerText = "Coins: "+coins;
+        document.getElementById("message").innerText = "You Win! 10 coins earned.";
+        resetBoard();
+        return;
+      }
+      computerMove();
     }
-  }, 20);
+  });
+});
 
-  bubble.onclick = () => {
-    coins += COINS_PER_HIT;
-    coinsEl.innerText = coins;
-    moneyEl.innerText = (coins * COIN_TO_RUPEE).toFixed(2);
-    bubble.remove();
-  };
+function computerMove(){
+  let empty = board.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+  let move = empty[Math.floor(Math.random()*empty.length)];
+  if(move !== undefined){
+    board[move] = computer;
+    cells[move].innerText = computer;
+    if(checkWin(computer)){
+      document.getElementById("message").innerText = "Computer Wins!";
+      resetBoard();
+    }
+  }
 }
 
-// Auto bubbles
-setInterval(createBubble, 1500);
+function checkWin(p){
+  return wins.some(combo => combo.every(i=>board[i]===p));
+}
 
-function shootBubble() {
-  coins += COINS_PER_HIT;
-  coinsEl.innerText = coins;
-  moneyEl.innerText = (coins * COIN_TO_RUPEE).toFixed(2);
+function resetBoard(){
+  board = Array(9).fill(null);
+  cells.forEach(c=>c.innerText='');
 }
 </script>
 
