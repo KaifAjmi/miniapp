@@ -28,8 +28,17 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 <script>
 /* ================= CONFIG ================= */
 const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
-const UID = localStorage.getItem("uid") || prompt("Enter your UID");
-localStorage.setItem("uid", UID);
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const UID = params.get("uid");
+
+  if (!UID) {
+    alert("❌ Invalid access. Open this game from Telegram bot only.");
+    throw new Error("UID missing");
+  }
+
+  console.log("Telegram UID:", UID);
+</script>
 
 let boardState=["","","","","","","","",""];
 let gameOver=false;
@@ -124,3 +133,4 @@ document.getElementById("ad").onclick = () => {
 
 </body>
 </html>
+
