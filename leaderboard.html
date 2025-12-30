@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Leaderboard</title></head>
+<head>
+<meta charset="UTF-8">
+<title>Leaderboard</title>
+<style>
+body{font-family:Arial;text-align:center;background:#f0f0f0;padding:20px}
+table{margin:auto;border-collapse:collapse;width:80%}
+th, td{border:1px solid #333;padding:8px;text-align:center}
+th{background:#ffeb3b;}
+</style>
+</head>
 <body>
 <h2>Leaderboard</h2>
-<table border="1" id="table">
+<table id="table">
 <tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>
 </table>
 
 <script>
-const API="https://YOUR_RAILWAY_URL/api.php";
+const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
 async function loadLeaderboard(){
   let data=await (await fetch(`${API}?get=leaderboard`)).json();
   const t=document.getElementById("table");
@@ -20,7 +29,7 @@ async function loadLeaderboard(){
   });
 }
 loadLeaderboard();
-setInterval(loadLeaderboard,10000);
+setInterval(loadLeaderboard,10000); // refresh leaderboard every 10 sec
 </script>
 </body>
 </html>
