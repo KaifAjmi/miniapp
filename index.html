@@ -1,106 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Game</title>
+<title>Tic Tac Toe</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background: linear-gradient(to top, #87CEEB, #fff); }
-  #navbar { background:#333; color:#fff; padding:10px; display:flex; justify-content:space-between; }
-  #navbar button { background:#555; color:#fff; border:none; padding:8px 12px; cursor:pointer; margin-left:5px; }
-  #game { text-align:center; margin-top:30px; }
-  #level2-container { display:none; margin-top:20px; }
-  #coins { font-weight:bold; }
-  #leaderboard { margin-top:20px; }
-  #dashboard { margin-top:20px; }
+body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
+#bar{background:#ffeb3b;padding:10px;font-weight:bold;}
+#ann{background:pink;margin:10px;padding:8px;font-weight:bold;}
+#lvl{background:lightgreen;margin:10px;padding:8px;font-weight:bold;}
+#board{display:grid;grid-template-columns:repeat(3,100px);gap:6px;justify-content:center;margin-top:20px}
+.cell{width:100px;height:100px;font-size:40px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;border:1px solid #333}
+#ad{margin-top:20px;background:orange;padding:12px;cursor:pointer;font-weight:bold;width:150px;margin-left:auto;margin-right:auto;border-radius:6px}
 </style>
 </head>
 <body>
 
-<div id="navbar">
-  <div>Coins: <span id="coins">0</span></div>
-  <div>
-    <button onclick="showDashboard()">Dashboard</button>
-    <button onclick="showLeaderboard()">Leaderboard</button>
-  </div>
-</div>
-
-<div id="game">
-  <h2>🎮 Level 1 Game</h2>
-  <button onclick="playLevel1()">Play Level 1</button>
-</div>
-
-<div id="level2-container">
-  <h2>🏆 Level 2 Prize Pool</h2>
-  Prize Pool: ₹<span id="prize-pool">0</span><br>
-  Time Left: <span id="countdown">--:--:--</span>
-</div>
-
-<div id="dashboard" style="display:none;">
-  <h3>Dashboard</h3>
-  Total Coins: <span id="dashboard-coins">0</span><br>
-  Wallet Balance: ₹<span id="wallet">0</span>
-</div>
-
-<div id="leaderboard" style="display:none;">
-  <h3>Leaderboard</h3>
-  <ol id="leaderboard-list">
-    <li>User1 - 50 coins</li>
-    <li>User2 - 30 coins</li>
-  </ol>
-</div>
+<div id="bar">Coins: 0</div>
+<div id="ann"></div>
+<div id="lvl"></div>
+<div id="board"></div>
+<div id="ad">🎬 Watch Ad</div>
 
 <script>
-  // ------------------ USER COINS ------------------
-  let coins = 0;
-  function playLevel1() {
-    coins += 10; // Winning 10 coins per play
-    document.getElementById('coins').innerText = coins;
-    document.getElementById('dashboard-coins').innerText = coins;
-    document.getElementById('wallet').innerText = coins; // 1 coin = 1 INR for demo
-    alert("You earned 10 coins!");
-  }
+const API="https://YOUR_RAILWAY_URL/api.php";
+const UID="test"; // Replace with dynamic UID for logged-in user
+let boardState=["","","","","","","","",""], gameOver=false;
 
-  // ------------------ DASHBOARD & LEADERBOARD ------------------
-  function showDashboard() {
-    document.getElementById('dashboard').style.display='block';
-    document.getElementById('leaderboard').style.display='none';
-  }
-  function showLeaderboard() {
-    document.getElementById('leaderboard').style.display='block';
-    document.getElementById('dashboard').style.display='none';
-  }
+// ---------------- LOAD USER + LEVEL2 ----------------
+async function load(){
+  try{
+    let u=await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+    document.getElementById("bar").innerText="Coins: "+u.coins;
 
-  // ------------------ LEVEL 2 ACTIVATION (ADMIN CONTROL) ------------------
-  let level2Active = false; // Update from admin panel
-  let prizePool = 500; // Example value
-  let countdownTime = 24*60*60; // 24 hours in seconds
+    let l=await (await fetch(`${API}?get=level2`)).json();
+    if(l.active){
+      document.getElementById("lvl").innerText="Prize Pool ₹"+l.prize_pool+" | Level-2 Active";
+      document.getElementById("ann").innerText=l.announcement;
+    } else {
+      document.getElementById("lvl").innerText="";
+      document.getElementById("ann").innerText="";
+    }
+  } catch(e){console.log(e);}
+}
+load();
 
-  // Function to simulate admin activating level 2
-  function activateLevel2() {
-    level2Active = true;
-    document.getElementById('level2-container').style.display = 'block';
-    document.getElementById('prize-pool').innerText = prizePool;
-    startCountdown();
+// ---------------- DRAW BOARD ----------------
+function drawBoard(){
+  let bd=document.getElementById("board");
+  bd.innerHTML="";
+  boardState.forEach((v,i)=>{
+    let cell=document.createElement("div");
+    cell.className="cell"; cell.innerText=v;
+    cell.onclick=()=>play(i);
+    bd.appendChild(cell);
+  });
+}
+drawBoard();
+
+// ---------------- PLAYER MOVE ----------------
+async function play(i){
+  if(boardState[i]||gameOver) return;
+  boardState[i]="X";
+  drawBoard();
+  if(checkWin("X")){
+    alert("You won +10 coins!");
+    await fetch(`${API}?action=win&uid=${UID}`,{method:"POST"});
+    await load();
+    gameOver=true;
+    return;
   }
+  botMove();
+}
 
-  // Countdown timer
-  function startCountdown() {
-    const countdownEl = document.getElementById('countdown');
-    let timer = setInterval(() => {
-      if(countdownTime <= 0) { clearInterval(timer); countdownEl.innerText = "00:00:00"; return; }
-      let hrs = Math.floor(countdownTime/3600);
-      let mins = Math.floor((countdownTime%3600)/60);
-      let secs = countdownTime%60;
-      countdownEl.innerText = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-      countdownTime--;
-    },1000);
-  }
+// ---------------- BOT MOVE ----------------
+function botMove(){
+  let empty=boardState.map((v,i)=>v==""?i:null).filter(v=>v!==null);
+  if(!empty.length) return;
+  boardState[empty[Math.floor(Math.random()*empty.length)]]="O";
+  drawBoard();
+}
 
-  // ------------------ SIMULATE ADMIN ACTIVATION ------------------
-  // This should be triggered when admin activates level 2 in real bot
-  setTimeout(()=>{ activateLevel2(); }, 3000); // Demo: activate after 3 sec
+// ---------------- CHECK WIN ----------------
+function checkWin(p){
+  return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
+    .some(a=>a.every(i=>boardState[i]==p));
+}
+
+// ---------------- MONETAG REWARDED AD ----------------
+document.getElementById("ad").onclick=()=>{
+  show_10394796().then(async()=>{
+    let r=await fetch(`${API}?action=ad&uid=${UID}`,{method:"POST"});
+    let d=await r.json();
+    if(d.status=="wait"){ alert("Wait 20 min"); }
+    else { alert("Ad watched! Coins unlocked."); }
+    load();
+  });
+};
 </script>
-
 </body>
 </html>
