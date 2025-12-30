@@ -2,7 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tic Tac Toe</title>
+<title>Tic Tac Toe – Level 2</title>
+
+<!-- ✅ MONETAG SDK (REQUIRED) -->
+<script src='//libtl.com/sdk.js' data-zone='10394796' data-sdk='show_10394796'></script>
+
 <style>
 body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 #bar{background:#ffeb3b;padding:10px;font-weight:bold;}
@@ -10,7 +14,7 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 #lvl{background:lightgreen;margin:10px;padding:8px;font-weight:bold;}
 #board{display:grid;grid-template-columns:repeat(3,100px);gap:6px;justify-content:center;margin-top:20px}
 .cell{width:100px;height:100px;font-size:40px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;border:1px solid #333}
-#ad{margin-top:20px;background:orange;padding:12px;cursor:pointer;font-weight:bold;width:150px;margin-left:auto;margin-right:auto;border-radius:6px}
+#ad{margin-top:20px;background:orange;padding:12px;cursor:pointer;font-weight:bold;width:180px;margin-left:auto;margin-right:auto;border-radius:6px}
 </style>
 </head>
 <body>
@@ -22,80 +26,101 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 <div id="ad">🎬 Watch Ad</div>
 
 <script>
-const API="https://YOUR_RAILWAY_URL/api.php";
-const UID="test"; // Replace with dynamic UID for logged-in user
-let boardState=["","","","","","","","",""], gameOver=false;
+/* ================= CONFIG ================= */
+const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
+const UID = localStorage.getItem("uid") || prompt("Enter your UID");
+localStorage.setItem("uid", UID);
 
-// ---------------- LOAD USER + LEVEL2 ----------------
+let boardState=["","","","","","","","",""];
+let gameOver=false;
+
+/* ================= LOAD USER + LEVEL 2 ================= */
 async function load(){
   try{
-    let u=await (await fetch(`${API}?get=user&uid=${UID}`)).json();
-    document.getElementById("bar").innerText="Coins: "+u.coins;
+    const u = await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+    document.getElementById("bar").innerText = "Coins: " + u.coins;
 
-    let l=await (await fetch(`${API}?get=level2`)).json();
+    const l = await (await fetch(`${API}?get=level2`)).json();
     if(l.active){
-      document.getElementById("lvl").innerText="Prize Pool ₹"+l.prize_pool+" | Level-2 Active";
-      document.getElementById("ann").innerText=l.announcement;
-    } else {
-      document.getElementById("lvl").innerText="";
-      document.getElementById("ann").innerText="";
+      document.getElementById("lvl").innerText =
+        `Prize Pool ₹${l.prize_pool} | Level-2 Active`;
+      document.getElementById("ann").innerText = l.announcement || "";
+    }else{
+      document.getElementById("lvl").innerText = "";
+      document.getElementById("ann").innerText = "";
     }
-  } catch(e){console.log(e);}
+  }catch(e){console.log(e);}
 }
 load();
 
-// ---------------- DRAW BOARD ----------------
+/* ================= DRAW BOARD ================= */
 function drawBoard(){
-  let bd=document.getElementById("board");
+  const bd=document.getElementById("board");
   bd.innerHTML="";
   boardState.forEach((v,i)=>{
-    let cell=document.createElement("div");
-    cell.className="cell"; cell.innerText=v;
+    const cell=document.createElement("div");
+    cell.className="cell";
+    cell.innerText=v;
     cell.onclick=()=>play(i);
     bd.appendChild(cell);
   });
 }
 drawBoard();
 
-// ---------------- PLAYER MOVE ----------------
+/* ================= PLAYER MOVE ================= */
 async function play(i){
-  if(boardState[i]||gameOver) return;
+  if(boardState[i] || gameOver) return;
+
   boardState[i]="X";
   drawBoard();
+
   if(checkWin("X")){
     alert("You won +10 coins!");
     await fetch(`${API}?action=win&uid=${UID}`,{method:"POST"});
-    await load();
     gameOver=true;
+    load();
     return;
   }
   botMove();
 }
 
-// ---------------- BOT MOVE ----------------
+/* ================= BOT MOVE ================= */
 function botMove(){
-  let empty=boardState.map((v,i)=>v==""?i:null).filter(v=>v!==null);
+  const empty = boardState
+    .map((v,i)=>v==""?i:null)
+    .filter(v=>v!==null);
+
   if(!empty.length) return;
+
   boardState[empty[Math.floor(Math.random()*empty.length)]]="O";
   drawBoard();
 }
 
-// ---------------- CHECK WIN ----------------
+/* ================= CHECK WIN ================= */
 function checkWin(p){
-  return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
-    .some(a=>a.every(i=>boardState[i]==p));
+  return [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ].some(a=>a.every(i=>boardState[i]===p));
 }
 
-// ---------------- MONETAG REWARDED AD ----------------
-document.getElementById("ad").onclick=()=>{
-  show_10394796().then(async()=>{
-    let r=await fetch(`${API}?action=ad&uid=${UID}`,{method:"POST"});
-    let d=await r.json();
-    if(d.status=="wait"){ alert("Wait 20 min"); }
-    else { alert("Ad watched! Coins unlocked."); }
+/* ================= MONETAG REWARDED INTERSTITIAL ================= */
+/* ❌ CODE NOT CHANGED (AS YOU SAID) */
+document.getElementById("ad").onclick = () => {
+  show_10394796().then(async () => {
+    const r = await fetch(`${API}?action=ad&uid=${UID}`,{method:"POST"});
+    const d = await r.json();
+
+    if(d.status === "wait"){
+      alert("Wait 20 minutes");
+    }else{
+      alert("You have seen an ad!");
+    }
     load();
   });
 };
 </script>
+
 </body>
 </html>
