@@ -28,109 +28,130 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 <script>
 /* ================= CONFIG ================= */
 const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
-<script>
-  const params = new URLSearchParams(window.location.search);
-  const UID = params.get("uid");
 
-  if (!UID) {
+/* ================= UID FROM TELEGRAM BOT ================= */
+const params = new URLSearchParams(window.location.search);
+const UID = params.get("uid");
+
+if (!UID) {
     alert("❌ Invalid access. Open this game from Telegram bot only.");
     throw new Error("UID missing");
-  }
+}
 
-  console.log("Telegram UID:", UID);
-</script>
+console.log("Telegram UID:", UID);
 
-let boardState=["","","","","","","","",""];
-let gameOver=false;
+/* ================= GAME STATE ================= */
+let boardState = ["","","","","","","","",""];
+let gameOver = false;
 
 /* ================= LOAD USER + LEVEL 2 ================= */
-async function load(){
-  try{
-    const u = await (await fetch(`${API}?get=user&uid=${UID}`)).json();
-    document.getElementById("bar").innerText = "Coins: " + u.coins;
+async function load() {
+    try {
+        const u = await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+        document.getElementById("bar").innerText = "Coins: " + u.coins;
 
-    const l = await (await fetch(`${API}?get=level2`)).json();
-    if(l.active){
-      document.getElementById("lvl").innerText =
-        `Prize Pool ₹${l.prize_pool} | Level-2 Active`;
-      document.getElementById("ann").innerText = l.announcement || "";
-    }else{
-      document.getElementById("lvl").innerText = "";
-      document.getElementById("ann").innerText = "";
-    }
-  }catch(e){console.log(e);}
+        const l = await (await fetch(`${API}?get=level2`)).json();
+        if(l.active){
+            document.getElementById("lvl").innerText =
+                `Prize Pool ₹${l.prize_pool} | Level-2 Active`;
+            document.getElementById("ann").innerText = l.announcement || "";
+        } else {
+            document.getElementById("lvl").innerText = "";
+            document.getElementById("ann").innerText = "";
+        }
+    } catch(e) { console.log(e); }
 }
 load();
 
 /* ================= DRAW BOARD ================= */
-function drawBoard(){
-  const bd=document.getElementById("board");
-  bd.innerHTML="";
-  boardState.forEach((v,i)=>{
-    const cell=document.createElement("div");
-    cell.className="cell";
-    cell.innerText=v;
-    cell.onclick=()=>play(i);
-    bd.appendChild(cell);
-  });
+function drawBoard() {
+    const bd = document.getElementById("board");
+    bd.innerHTML = "";
+    boardState.forEach((v,i)=>{
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.innerText = v;
+        cell.onclick = ()=>play(i);
+        bd.appendChild(cell);
+    });
 }
 drawBoard();
 
 /* ================= PLAYER MOVE ================= */
 async function play(i){
-  if(boardState[i] || gameOver) return;
+    if(boardState[i] || gameOver) return;
 
-  boardState[i]="X";
-  drawBoard();
+    boardState[i] = "X";
+    drawBoard();
 
-  if(checkWin("X")){
-    alert("You won +10 coins!");
-    await fetch(`${API}?action=win&uid=${UID}`,{method:"POST"});
-    gameOver=true;
-    load();
-    return;
-  }
-  botMove();
+    if(checkWin("X")){
+        alert("You won +10 coins!");
+        
+        // ✅ Add coins via POST JSON
+        await fetch(`${API}?action=win`, {
+            method:"POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: UID, amount: 10 })
+        });
+
+        load();
+        gameOver = true;
+
+        // ✅ Reset board after short delay
+        setTimeout(() => {
+            boardState = ["","","","","","","","",""];
+            gameOver = false;
+            drawBoard();
+        }, 500);
+        return;
+    }
+
+    botMove();
 }
 
 /* ================= BOT MOVE ================= */
-function botMove(){
-  const empty = boardState
-    .map((v,i)=>v==""?i:null)
-    .filter(v=>v!==null);
+function botMove() {
+    const empty = boardState.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+    if(!empty.length) return;
 
-  if(!empty.length) return;
-
-  boardState[empty[Math.floor(Math.random()*empty.length)]]="O";
-  drawBoard();
+    boardState[empty[Math.floor(Math.random()*empty.length)]] = "O";
+    drawBoard();
 }
 
 /* ================= CHECK WIN ================= */
 function checkWin(p){
-  return [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
-  ].some(a=>a.every(i=>boardState[i]===p));
+    return [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ].some(a=>a.every(i=>boardState[i]===p));
 }
 
 /* ================= MONETAG REWARDED INTERSTITIAL ================= */
-/* ❌ CODE NOT CHANGED (AS YOU SAID) */
-document.getElementById("ad").onclick = () => {
-  show_10394796().then(async () => {
-    const r = await fetch(`${API}?action=ad&uid=${UID}`,{method:"POST"});
+const adBtn = document.getElementById("ad");
+adBtn.addEventListener("click", async () => {
+    if (typeof show_10394796 !== "function") {
+        alert("Ad SDK not loaded yet");
+        return;
+    }
+
+    await show_10394796();
+
+    const r = await fetch(`${API}?action=ad`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: UID })
+    });
     const d = await r.json();
 
     if(d.status === "wait"){
-      alert("Wait 20 minutes");
-    }else{
-      alert("You have seen an ad!");
+        alert("⏳ Wait 20 min before next ad");
+    } else {
+        alert("✅ Ad watched! Coins unlocked.");
+        await load();
     }
-    load();
-  });
-};
+});
 </script>
 
 </body>
 </html>
-
