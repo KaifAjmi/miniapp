@@ -3,123 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tic Tac Toe – Level 1</title>
+<title>Mini Game</title>
 <style>
-  body { font-family: Arial; background: linear-gradient(#87ceeb,#e0f6ff); text-align:center; margin:0; padding:0;}
-  #dashboard { margin: 10px; }
-  #coins, #level { font-size: 18px; margin:5px;}
-  #leaderboardBtn, #dashboardBtn { padding:5px 10px; margin:5px; cursor:pointer;}
-  #gameBoard { display: grid; grid-template-columns: repeat(3, 100px); grid-gap:5px; margin:20px auto; }
-  .cell { width:100px; height:100px; background:white; display:flex; align-items:center; justify-content:center; font-size:36px; cursor:pointer; border:2px solid #333;}
-  #message { margin-top:10px; font-size:16px;}
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background: linear-gradient(to top, #87CEEB, #fff); }
+  #navbar { background:#333; color:#fff; padding:10px; display:flex; justify-content:space-between; }
+  #navbar button { background:#555; color:#fff; border:none; padding:8px 12px; cursor:pointer; margin-left:5px; }
+  #game { text-align:center; margin-top:30px; }
+  #level2-container { display:none; margin-top:20px; }
+  #coins { font-weight:bold; }
+  #leaderboard { margin-top:20px; }
+  #dashboard { margin-top:20px; }
 </style>
 </head>
 <body>
 
-<h2>Tic Tac Toe – Level 1</h2>
-
-<div id="dashboard">
-  <div id="coins">Coins: 0</div>
-  <div id="level">Level: 1</div>
-  <button id="leaderboardBtn">Leaderboard</button>
-  <button id="dashboardBtn">Dashboard</button>
+<div id="navbar">
+  <div>Coins: <span id="coins">0</span></div>
+  <div>
+    <button onclick="showDashboard()">Dashboard</button>
+    <button onclick="showLeaderboard()">Leaderboard</button>
+  </div>
 </div>
 
-<div id="gameBoard">
-  <div class="cell" data-index="0"></div>
-  <div class="cell" data-index="1"></div>
-  <div class="cell" data-index="2"></div>
-  <div class="cell" data-index="3"></div>
-  <div class="cell" data-index="4"></div>
-  <div class="cell" data-index="5"></div>
-  <div class="cell" data-index="6"></div>
-  <div class="cell" data-index="7"></div>
-  <div class="cell" data-index="8"></div>
+<div id="game">
+  <h2>🎮 Level 1 Game</h2>
+  <button onclick="playLevel1()">Play Level 1</button>
 </div>
 
-<div id="message"></div>
-<button id="freePlayBtn">Free Play (First Time)</button>
-<button id="watchAdBtn" disabled>Watch Ad to Play More</button>
+<div id="level2-container">
+  <h2>🏆 Level 2 Prize Pool</h2>
+  Prize Pool: ₹<span id="prize-pool">0</span><br>
+  Time Left: <span id="countdown">--:--:--</span>
+</div>
+
+<div id="dashboard" style="display:none;">
+  <h3>Dashboard</h3>
+  Total Coins: <span id="dashboard-coins">0</span><br>
+  Wallet Balance: ₹<span id="wallet">0</span>
+</div>
+
+<div id="leaderboard" style="display:none;">
+  <h3>Leaderboard</h3>
+  <ol id="leaderboard-list">
+    <li>User1 - 50 coins</li>
+    <li>User2 - 30 coins</li>
+  </ol>
+</div>
 
 <script>
-// Game & User Logic
-let board = Array(9).fill(null);
-let player = 'X';
-let computer = 'O';
-let coins = 0;
-let adWatched = 0;
-const maxAdsPerUser = 5;
-const safeAdGap = 20 * 60; // 20 minutes in seconds
-let lastAdTime = 0;
-
-// Win combinations
-const wins = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
-];
-
-// Free Play button
-document.getElementById("freePlayBtn").onclick = ()=>{
-  document.getElementById("message").innerText = "Free Play started! Play and earn coins after each win.";
-  document.getElementById("watchAdBtn").disabled = false;
-  document.getElementById("freePlayBtn").disabled = true;
-}
-
-// Watch Ad button
-document.getElementById("watchAdBtn").onclick = ()=>{
-  let now = Date.now()/1000;
-  if(adWatched < maxAdsPerUser && now - lastAdTime >= safeAdGap){
-    adWatched++;
-    lastAdTime = now;
-    document.getElementById("message").innerText = `Ad watched ${adWatched}/${maxAdsPerUser}. Play 20 min free now!`;
-  } else {
-    let wait = Math.ceil(safeAdGap - (now - lastAdTime));
-    document.getElementById("message").innerText = `Wait ${wait} seconds before next ad or max ads reached!`;
+  // ------------------ USER COINS ------------------
+  let coins = 0;
+  function playLevel1() {
+    coins += 10; // Winning 10 coins per play
+    document.getElementById('coins').innerText = coins;
+    document.getElementById('dashboard-coins').innerText = coins;
+    document.getElementById('wallet').innerText = coins; // 1 coin = 1 INR for demo
+    alert("You earned 10 coins!");
   }
-}
 
-// Game Board Click
-const cells = document.querySelectorAll(".cell");
-cells.forEach(cell => {
-  cell.addEventListener("click", ()=> {
-    let idx = cell.dataset.index;
-    if(!board[idx]){
-      board[idx] = player;
-      cell.innerText = player;
-      if(checkWin(player)){
-        coins += 10;
-        document.getElementById("coins").innerText = "Coins: "+coins;
-        document.getElementById("message").innerText = "You Win! 10 coins earned.";
-        resetBoard();
-        return;
-      }
-      computerMove();
-    }
-  });
-});
-
-function computerMove(){
-  let empty = board.map((v,i)=>v===null?i:null).filter(v=>v!==null);
-  let move = empty[Math.floor(Math.random()*empty.length)];
-  if(move !== undefined){
-    board[move] = computer;
-    cells[move].innerText = computer;
-    if(checkWin(computer)){
-      document.getElementById("message").innerText = "Computer Wins!";
-      resetBoard();
-    }
+  // ------------------ DASHBOARD & LEADERBOARD ------------------
+  function showDashboard() {
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('leaderboard').style.display='none';
   }
-}
+  function showLeaderboard() {
+    document.getElementById('leaderboard').style.display='block';
+    document.getElementById('dashboard').style.display='none';
+  }
 
-function checkWin(p){
-  return wins.some(combo => combo.every(i=>board[i]===p));
-}
+  // ------------------ LEVEL 2 ACTIVATION (ADMIN CONTROL) ------------------
+  let level2Active = false; // Update from admin panel
+  let prizePool = 500; // Example value
+  let countdownTime = 24*60*60; // 24 hours in seconds
 
-function resetBoard(){
-  board = Array(9).fill(null);
-  cells.forEach(c=>c.innerText='');
-}
+  // Function to simulate admin activating level 2
+  function activateLevel2() {
+    level2Active = true;
+    document.getElementById('level2-container').style.display = 'block';
+    document.getElementById('prize-pool').innerText = prizePool;
+    startCountdown();
+  }
+
+  // Countdown timer
+  function startCountdown() {
+    const countdownEl = document.getElementById('countdown');
+    let timer = setInterval(() => {
+      if(countdownTime <= 0) { clearInterval(timer); countdownEl.innerText = "00:00:00"; return; }
+      let hrs = Math.floor(countdownTime/3600);
+      let mins = Math.floor((countdownTime%3600)/60);
+      let secs = countdownTime%60;
+      countdownEl.innerText = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+      countdownTime--;
+    },1000);
+  }
+
+  // ------------------ SIMULATE ADMIN ACTIVATION ------------------
+  // This should be triggered when admin activates level 2 in real bot
+  setTimeout(()=>{ activateLevel2(); }, 3000); // Demo: activate after 3 sec
 </script>
 
 </body>
