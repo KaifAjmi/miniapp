@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Dashboard</title></head>
+<body>
+<h2>Dashboard</h2>
+<div id="coins"></div>
+<div id="wallet"></div>
+<input type="text" id="upi" placeholder="Enter UPI ID">
+<button onclick="withdraw()">Withdraw</button>
+
+<script>
+const API="https://YOUR_RAILWAY_URL/api.php";
+const UID="test"; // Replace with dynamic UID
+
+async function loadUser(){
+  try{
+    let u=await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+    document.getElementById("coins").innerText="Coins: "+u.coins;
+    document.getElementById("wallet").innerText="Wallet: ₹"+u.wallet;
+    document.getElementById("upi").value=u.upi||"";
+  } catch(e){console.log(e);}
+}
+async function withdraw(){
+  let upi=document.getElementById("upi").value;
+  if(!upi){ alert("Enter UPI ID"); return; }
+  await fetch(`${API}?withdraw`,{
+    method:"POST",
+    body:JSON.stringify({uid:UID,upi:upi})
+  });
+  alert("Withdraw request sent");
+  loadUser();
+}
+loadUser();
+</script>
+</body>
+</html>
