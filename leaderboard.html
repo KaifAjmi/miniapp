@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Leaderboard</title></head>
+<body>
+<h2>Leaderboard</h2>
+<table border="1" id="table">
+<tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>
+</table>
+
+<script>
+const API="https://YOUR_RAILWAY_URL/api.php";
+async function loadLeaderboard(){
+  let data=await (await fetch(`${API}?get=leaderboard`)).json();
+  const t=document.getElementById("table");
+  t.innerHTML="<tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>";
+  data.forEach(u=>{
+    let tr=document.createElement("tr");
+    tr.innerHTML=`<td>${u.id}</td><td>${u.coins}</td><td>${u.wallet}</td>`;
+    t.appendChild(tr);
+  });
+}
+loadLeaderboard();
+setInterval(loadLeaderboard,10000);
+</script>
+</body>
+</html>
