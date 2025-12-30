@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Dashboard</title></head>
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<style>
+body{font-family:Arial;text-align:center;background:#f0f0f0;padding:20px}
+input{padding:8px;margin:8px;}
+button{padding:8px 12px;margin:8px;cursor:pointer;}
+</style>
+</head>
 <body>
-<h2>Dashboard</h2>
-<div id="coins"></div>
-<div id="wallet"></div>
+<h2>User Dashboard</h2>
+<div id="coins">Coins: 0</div>
+<div id="wallet">Wallet: ₹0</div>
 <input type="text" id="upi" placeholder="Enter UPI ID">
 <button onclick="withdraw()">Withdraw</button>
 
 <script>
-const API="https://YOUR_RAILWAY_URL/api.php";
-const UID="test"; // Replace with dynamic UID
+const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
+const UID=localStorage.getItem("uid") || prompt("Enter your UID");
+localStorage.setItem("uid", UID);
 
 async function loadUser(){
   try{
@@ -20,17 +29,21 @@ async function loadUser(){
     document.getElementById("upi").value=u.upi||"";
   } catch(e){console.log(e);}
 }
+
 async function withdraw(){
   let upi=document.getElementById("upi").value;
   if(!upi){ alert("Enter UPI ID"); return; }
   await fetch(`${API}?withdraw`,{
     method:"POST",
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({uid:UID,upi:upi})
   });
   alert("Withdraw request sent");
   loadUser();
 }
+
 loadUser();
+setInterval(loadUser,10000); // refresh dashboard every 10 sec
 </script>
 </body>
 </html>
