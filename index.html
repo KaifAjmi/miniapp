@@ -86,23 +86,22 @@ async function play(i){
 
     if(checkWin("X")){
         gameOver = true;
-        alert("🎉 You won +10 coins!");
 
-        // ✅ Add coins via POST JSON
-        await fetch(`${API}?action=win`, {
-            method:"POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uid: UID, amount: 10 })
-        });
-
-        await load();
-
-        // ✅ Reset board after 1 second
+        // ✅ Reset board immediately
         setTimeout(() => {
             boardState = ["","","","","","","","",""];
             gameOver = false;
             drawBoard();
-        }, 1000);
+        }, 500);
+
+        // ✅ Coins add in background
+        fetch(`${API}?action=win`, {
+            method:"POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: UID, amount: 10 })
+        }).then(() => load());
+
+        alert("You won +10 coins!");
         return;
     }
 
@@ -114,20 +113,19 @@ function botMove() {
     const empty = boardState.map((v,i)=>v===""?i:null).filter(v=>v!==null);
     if(!empty.length) return;
 
-    // Random move
     boardState[empty[Math.floor(Math.random()*empty.length)]] = "O";
     drawBoard();
 
     if(checkWin("O")){
         gameOver = true;
-        alert("😢 You lost! Try again.");
 
-        // Reset board after 1 second
         setTimeout(() => {
             boardState = ["","","","","","","","",""];
             gameOver = false;
             drawBoard();
-        }, 1000);
+        }, 500);
+
+        alert("Computer wins!");
     }
 }
 
