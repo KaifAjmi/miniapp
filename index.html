@@ -94,8 +94,8 @@ async function play(i){
             body: JSON.stringify({ uid: UID, amount: 10 })
         });
 
-        load();
         gameOver = true;
+        await load();
 
         // ✅ Reset board after short delay
         setTimeout(() => {
@@ -116,6 +116,17 @@ function botMove() {
 
     boardState[empty[Math.floor(Math.random()*empty.length)]] = "O";
     drawBoard();
+
+    if(checkWin("O")){
+        alert("Computer won!");
+        gameOver = true;
+
+        setTimeout(() => {
+            boardState = ["","","","","","","","",""];
+            gameOver = false;
+            drawBoard();
+        }, 500);
+    }
 }
 
 /* ================= CHECK WIN ================= */
