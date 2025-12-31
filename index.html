@@ -49,7 +49,7 @@ async function load() {
     try {
         // USER DATA
         const u = await (await fetch(`${API}?get=user&uid=${UID}`)).then(r=>r.json());
-        document.getElementById("bar").innerText = "Coins: " + u.coins;
+        document.getElementById("bar").innerText = "Coins: " + (u.coins || 0);
 
         // LEVEL 2 DATA
         const l = await (await fetch(`${API}?get=level2`)).then(r=>r.json());
@@ -97,10 +97,13 @@ async function play(i){
         }, 500);
 
         // ✅ Coins add via Supabase API
-        await fetch(`${API}?action=win&uid=${UID}`, { method:"POST" });
-        await load();
+        const res = await fetch(`${API}?action=win&uid=${UID}`, { method:"POST" });
+        const data = await res.json();
 
-        alert("You won +10 coins!");
+        if(data.status === "ok"){
+            await load();
+            alert("You won +10 coins!");
+        }
         return;
     }
 
@@ -154,7 +157,7 @@ adBtn.addEventListener("click", async () => {
     if(d.status === "wait"){
         alert("⏳ Wait 20 min before next ad");
     } else if(d.status === "error"){
-        alert(d.message);
+        alert(d.message || "Error watching ad");
     } else {
         alert("✅ Ad watched! Coins unlocked.");
         await load();
