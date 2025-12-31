@@ -47,10 +47,12 @@ let gameOver = false;
 /* ================= LOAD USER + LEVEL 2 ================= */
 async function load() {
     try {
-        const u = await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+        // USER DATA
+        const u = await (await fetch(`${API}?get=user&uid=${UID}`)).then(r=>r.json());
         document.getElementById("bar").innerText = "Coins: " + u.coins;
 
-        const l = await (await fetch(`${API}?get=level2`)).json();
+        // LEVEL 2 DATA
+        const l = await (await fetch(`${API}?get=level2`)).then(r=>r.json());
         if(l.active){
             document.getElementById("lvl").innerText =
                 `Prize Pool ₹${l.prize_pool} | Level-2 Active`;
@@ -87,19 +89,16 @@ async function play(i){
     if(checkWin("X")){
         gameOver = true;
 
-        // ✅ Reset board immediately
+        // ✅ Reset board after short delay
         setTimeout(() => {
             boardState = ["","","","","","","","",""];
             gameOver = false;
             drawBoard();
         }, 500);
 
-        // ✅ Coins add in background
-        fetch(`${API}?action=win`, {
-            method:"POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uid: UID, amount: 10 })
-        }).then(() => load());
+        // ✅ Coins add via Supabase API
+        await fetch(`${API}?action=win&uid=${UID}`, { method:"POST" });
+        await load();
 
         alert("You won +10 coins!");
         return;
@@ -118,13 +117,11 @@ function botMove() {
 
     if(checkWin("O")){
         gameOver = true;
-
         setTimeout(() => {
             boardState = ["","","","","","","","",""];
             gameOver = false;
             drawBoard();
         }, 500);
-
         alert("Computer wins!");
     }
 }
@@ -148,15 +145,16 @@ adBtn.addEventListener("click", async () => {
 
     await show_10394796();
 
-    const r = await fetch(`${API}?action=ad`, {
+    const r = await fetch(`${API}?action=reward_ad&uid=${UID}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid: UID })
+        headers: { "Content-Type": "application/json" }
     });
     const d = await r.json();
 
     if(d.status === "wait"){
         alert("⏳ Wait 20 min before next ad");
+    } else if(d.status === "error"){
+        alert(d.message);
     } else {
         alert("✅ Ad watched! Coins unlocked.");
         await load();
