@@ -5,42 +5,49 @@
 <title>Dashboard</title>
 <style>
 body{font-family:Arial;text-align:center;background:#f0f0f0;padding:20px}
-input{padding:8px;margin:8px;}
-button{padding:8px 12px;margin:8px;cursor:pointer;}
+input{padding:8px;margin:8px}
+button{padding:8px 12px;margin:8px;cursor:pointer}
 </style>
 </head>
 <body>
+
 <h2>User Dashboard</h2>
 <div id="coins">Coins: 0</div>
 <div id="wallet">Wallet: ₹0</div>
+
 <input type="text" id="upi" placeholder="Enter UPI ID">
 <button onclick="withdraw()">Withdraw</button>
 
 <script>
-const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php"; // replace
-const UID=localStorage.getItem("uid")||prompt("Enter UID");
+const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php";
+const UID=localStorage.getItem("uid") || prompt("Enter UID");
 localStorage.setItem("uid",UID);
 
 async function loadUser(){
-    let u = await fetch(`${API}?get=user&uid=${UID}`).then(r=>r.json());
+    const u = await fetch(`${API}?get=user&uid=${UID}`).then(r=>r.json());
     document.getElementById("coins").innerText="Coins: "+u.coins;
     document.getElementById("wallet").innerText="Wallet: ₹"+u.wallet;
     document.getElementById("upi").value=u.upi||"";
 }
+
 async function withdraw(){
-    let upi=document.getElementById("upi").value;
-    if(!upi){ alert("Enter UPI ID"); return; }
-    await fetch(`${API}?action=withdraw`,{
+    const upi=document.getElementById("upi").value;
+    if(!upi){ alert("Enter UPI"); return; }
+
+    const r = await fetch(`${API}?action=withdraw&uid=${UID}`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({uid:UID,upi:upi})
+        body:JSON.stringify({upi:upi})
     });
-    alert("Withdraw request sent");
+    const d = await r.json();
+    if(d.status==="ok") alert("Withdraw request sent");
+    else alert("Withdraw failed");
     loadUser();
 }
 
 loadUser();
 setInterval(loadUser,10000);
 </script>
+
 </body>
 </html>
