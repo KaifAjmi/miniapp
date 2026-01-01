@@ -6,30 +6,34 @@
 <style>
 body{font-family:Arial;text-align:center;background:#f0f0f0;padding:20px}
 table{margin:auto;border-collapse:collapse;width:80%}
-th, td{border:1px solid #333;padding:8px;text-align:center}
-th{background:#ffeb3b;}
+th,td{border:1px solid #333;padding:8px}
+th{background:#ffeb3b}
 </style>
 </head>
 <body>
+
 <h2>Leaderboard</h2>
 <table id="table">
 <tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>
 </table>
 
 <script>
-const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php"; // replace
+const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php";
+
 async function loadLeaderboard(){
-    let data=await fetch(`${API}?get=leaderboard`).then(r=>r.json());
+    const data=await fetch(`${API}?get=leaderboard`).then(r=>r.json());
     const t=document.getElementById("table");
     t.innerHTML="<tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>";
     data.forEach(u=>{
-        let tr=document.createElement("tr");
+        const tr=document.createElement("tr");
         tr.innerHTML=`<td>${u.uid}</td><td>${u.coins}</td><td>${u.wallet}</td>`;
         t.appendChild(tr);
     });
 }
+
 loadLeaderboard();
 setInterval(loadLeaderboard,10000);
 </script>
+
 </body>
 </html>
