@@ -17,33 +17,30 @@ button{padding:8px 12px;margin:8px;cursor:pointer;}
 <button onclick="withdraw()">Withdraw</button>
 
 <script>
-const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
-const UID=localStorage.getItem("uid") || prompt("Enter your UID");
-localStorage.setItem("uid", UID);
+const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php"; // replace
+const UID=localStorage.getItem("uid")||prompt("Enter UID");
+localStorage.setItem("uid",UID);
 
 async function loadUser(){
-  try{
-    let u=await (await fetch(`${API}?get=user&uid=${UID}`)).json();
+    let u = await fetch(`${API}?get=user&uid=${UID}`).then(r=>r.json());
     document.getElementById("coins").innerText="Coins: "+u.coins;
     document.getElementById("wallet").innerText="Wallet: ₹"+u.wallet;
     document.getElementById("upi").value=u.upi||"";
-  } catch(e){console.log(e);}
 }
-
 async function withdraw(){
-  let upi=document.getElementById("upi").value;
-  if(!upi){ alert("Enter UPI ID"); return; }
-  await fetch(`${API}?withdraw`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid:UID,upi:upi})
-  });
-  alert("Withdraw request sent");
-  loadUser();
+    let upi=document.getElementById("upi").value;
+    if(!upi){ alert("Enter UPI ID"); return; }
+    await fetch(`${API}?action=withdraw`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({uid:UID,upi:upi})
+    });
+    alert("Withdraw request sent");
+    loadUser();
 }
 
 loadUser();
-setInterval(loadUser,10000); // refresh dashboard every 10 sec
+setInterval(loadUser,10000);
 </script>
 </body>
 </html>
