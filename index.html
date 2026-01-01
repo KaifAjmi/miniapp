@@ -13,7 +13,7 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 #ann{background:pink;margin:10px;padding:8px;font-weight:bold;}
 #lvl{background:lightgreen;margin:10px;padding:8px;font-weight:bold;}
 #timer{background:#ddd;margin:10px;padding:8px;font-weight:bold;}
-#board{display:grid;grid-template-columns:repeat(3,100px);gap:6px;justify-content:center;margin-top:20px}
+#board{display:grid;grid-template-columns:repeat(3,100px);gap:6px;justify-content:center;margin-top:20px;opacity:0.5;pointer-events:none}
 .cell{width:100px;height:100px;font-size:40px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;border:1px solid #333}
 #ad{margin-top:20px;background:orange;padding:12px;cursor:pointer;font-weight:bold;width:180px;margin-left:auto;margin-right:auto;border-radius:6px}
 </style>
@@ -22,7 +22,7 @@ body{text-align:center;font-family:Arial;margin:0;padding:0;background:#f0f0f0}
 
 <div id="bar">Coins: 0</div>
 <div id="ann"></div>
-<div id="lvl"></div>
+<div id="lvl">Loading level...</div>
 <div id="timer"></div>
 <div id="board"></div>
 <div id="ad">🎬 Watch Ad</div>
@@ -37,27 +37,40 @@ if (!UID) { alert("❌ Open from Telegram bot only"); throw new Error("UID missi
 let boardState = ["","","","","","","","",""];
 let gameOver = false;
 let levelActive = false;
+let levelLoaded = false;
 
-async function load() {
+function enableBoard(enable){
+    const b = document.getElementById("board");
+    b.style.opacity = enable ? "1" : "0.5";
+    b.style.pointerEvents = enable ? "auto" : "none";
+}
+
+async function load(){
+    enableBoard(false);
+
     const u = await fetch(`${API}?get=user&uid=${UID}`).then(r=>r.json());
     document.getElementById("bar").innerText = "Coins: " + u.coins;
 
     const l = await fetch(`${API}?get=level2`).then(r=>r.json());
-    if(l.active){
+
+    levelLoaded = true;
+
+    if(l.active === true){
         levelActive = true;
         document.getElementById("lvl").innerText = `Prize Pool ₹${l.prize_pool} | Level-2 Active`;
-        document.getElementById("ann").innerText = l.announcement;
+        document.getElementById("ann").innerText = l.announcement || "";
         document.getElementById("timer").innerText =
             "Time left: " + Math.floor(l.remaining/3600) + "h " +
             Math.floor((l.remaining%3600)/60) + "m";
+        enableBoard(true);
     } else {
         levelActive = false;
         document.getElementById("lvl").innerText = "Level-2 Inactive";
         document.getElementById("ann").innerText = "";
         document.getElementById("timer").innerText = "";
+        enableBoard(false);
     }
 }
-load();
 
 function drawBoard(){
     const bd = document.getElementById("board");
@@ -71,12 +84,16 @@ function drawBoard(){
     });
 }
 drawBoard();
+load();
 
 async function play(i){
+    if(!levelLoaded) return;
     if(!levelActive){ alert("Level-2 not active"); return; }
     if(boardState[i] || gameOver) return;
 
-    boardState[i]="X"; drawBoard();
+    boardState[i]="X";
+    drawBoard();
+
     if(checkWin("X")){
         gameOver=true;
         const r = await fetch(`${API}?action=win&uid=${UID}`,{method:"POST"});
@@ -93,11 +110,23 @@ function botMove(){
     if(!empty.length) return;
     boardState[empty[Math.floor(Math.random()*empty.length)]]="O";
     drawBoard();
-    if(checkWin("O")){ gameOver=true; alert("😢 Computer wins"); setTimeout(resetBoard,800); }
+    if(checkWin("O")){
+        gameOver=true;
+        alert("😢 Computer wins");
+        setTimeout(resetBoard,800);
+    }
 }
 
-function resetBoard(){ boardState=["","","","","","","","",""]; gameOver=false; drawBoard(); }
-function checkWin(p){ return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].some(a=>a.every(i=>boardState[i]===p)); }
+function resetBoard(){
+    boardState=["","","","","","","","",""];
+    gameOver=false;
+    drawBoard();
+}
+
+function checkWin(p){
+    return [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
+        .some(a=>a.every(i=>boardState[i]===p));
+}
 
 /* ================= MONETAG AD (DO NOT TOUCH) ================= */
 document.getElementById("ad").onclick = async ()=>{
