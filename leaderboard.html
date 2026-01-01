@@ -17,19 +17,19 @@ th{background:#ffeb3b;}
 </table>
 
 <script>
-const API="https://telegram-bot-backend-admin-production.up.railway.app/api.php";
+const API="https://telegram-bot-backend-admin-new-production.up.railway.app/api.php"; // replace
 async function loadLeaderboard(){
-  let data=await (await fetch(`${API}?get=leaderboard`)).json();
-  const t=document.getElementById("table");
-  t.innerHTML="<tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>";
-  data.forEach(u=>{
-    let tr=document.createElement("tr");
-    tr.innerHTML=`<td>${u.id}</td><td>${u.coins}</td><td>${u.wallet}</td>`;
-    t.appendChild(tr);
-  });
+    let data=await fetch(`${API}?get=leaderboard`).then(r=>r.json());
+    const t=document.getElementById("table");
+    t.innerHTML="<tr><th>User ID</th><th>Coins</th><th>Wallet</th></tr>";
+    data.forEach(u=>{
+        let tr=document.createElement("tr");
+        tr.innerHTML=`<td>${u.uid}</td><td>${u.coins}</td><td>${u.wallet}</td>`;
+        t.appendChild(tr);
+    });
 }
 loadLeaderboard();
-setInterval(loadLeaderboard,10000); // refresh leaderboard every 10 sec
+setInterval(loadLeaderboard,10000);
 </script>
 </body>
 </html>
